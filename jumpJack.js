@@ -63,7 +63,7 @@ function Level(plan){
         this.actors.push(new Actor(new Vector(x, y), ch));  
       }else{
         if(ch == "x"){
-          filedType = "wall";
+          fieldType = "wall";
         }
       }
       gridLine.push(fieldType);
@@ -84,6 +84,45 @@ function Player(pos){
   this.size = new Vector(1, 1);
   this.type = "player";
 }
+
+
+//drawing
+//create dom element
+function elt(name, className){
+  var elt = document.createElement(name);
+  if(className){
+    elt.className = className;
+  }
+  return elt;
+}
+
+var scale = 20; //scale the dom element
+
+//DOMDisplay constructor
+function DOMDisplay(parent, level){
+  this.wrap = parent.appendChild(elt("div", "game"));   //todo: elt
+  this.level = level;
+
+  this.wrap.appendChild(this.drawBackground());
+}
+
+DOMDisplay.prototype.drawBackground = function(){
+  var table = elt("table", "background");
+  table.style.width = this.level.width * scale + "px";
+  this.level.grid.forEach(function(gridLine){
+    var row = table.appendChild(elt("tr", "bgRow"));
+    row.style.height = scale + "px";
+    gridLine.forEach(function(type){
+      row.appendChild(elt("td", type));
+    });
+  });
+  if(table){
+    console.log("drawBackground test: background table built");
+  }else{
+    console.log("drawBackground test: wrong!");
+  }
+  return table;
+};
 
 function test(){
   //Level test
@@ -120,5 +159,22 @@ function test(){
   if(playerPos.equal(new Vector(1, 1))){
     console.log("Player constructor test: OK");
   }
+
+  //elt test
+  var divElt = elt("div", "game");
+  if(divElt.calssName == "game"){
+    console.log("elt test: OK");
+  }
+
+  //DOMDisplay test
+  var display = new DOMDisplay(document.body, level);
+  if(display){
+    console.log("DOMDisplay constructor test: OK");
+  }
+
+  /*
+  //DOMDisplay drawBackground test
+  display.drawBackground();
+  */
 }
 test();

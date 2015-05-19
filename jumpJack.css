@@ -1,0 +1,17 @@
+.game{
+  position: relative;
+}
+
+.background{
+  background: rgb(52, 166, 251);
+  border-spacing: 0px;
+  table-layout: fixed;
+}
+
+.background td{
+  padding: 0px;
+}
+
+.wall{
+  background: grey;
+}
