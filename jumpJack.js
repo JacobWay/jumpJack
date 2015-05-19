@@ -24,6 +24,14 @@ Vector.prototype.times = function(factor){
   return new Vector(this.x * factor, this.y * factor);
 };
 
+Vector.prototype.equal = function(other){
+  if(this.x === other.x &&
+      this.y === other.y){
+    return true;
+  }
+  return false;
+};
+
 //design level
 var levelPlan = [
 "                      ",
@@ -34,14 +42,14 @@ var levelPlan = [
 " x                    ",
 " x                    ",
 " x Y                  ",
-" xxxxxxxxxxxxxxxxx    "
+" xxxxxxxxxxxxxxxxx    ",
 "                      ",
 ];
 
 //level constructor
 function Level(plan){
-  this.height = plan[0].length;
-  this.width = plan.length;
+  this.height = plan.length;
+  this.width = plan[0].length;
   this.grid = [];
   this.actors = [];
 
@@ -50,7 +58,7 @@ function Level(plan){
     for(var x=0; x<this.width; x++){
       var ch = line[x];
       fieldType = null;
-      var Actor = actorChars(ch);   
+      var Actor = actorChars[ch];
       if(Actor){
         this.actors.push(new Actor(new Vector(x, y), ch));  
       }else{
@@ -95,12 +103,12 @@ function test(){
   var vTimesT = new Vector(2, 2);
   var vPlus = v1.plus(v2);
   var vTimes = v1.times(2);
-  if(vPlus.equal(vPlusT){
+  if(vPlus.equal(vPlusT)){
     console.log("Vector plus test: OK");
   }else{
     console.log("Vector plus test: Wrong");
   }
-  if(vTimes.equal(vTimesT){
+  if(vTimes.equal(vTimesT)){
     console.log("Vector times test: OK");
   }else{
     console.log("Vector times test: Wrong");
