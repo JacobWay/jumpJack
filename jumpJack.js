@@ -100,6 +100,26 @@ Level.prototype.animate = function(step, keys){
   }, this);
 };
 
+Level.prototype.obstacleAt = function(pos, size){
+  var xStart = Math.floor(pos.x);
+  var xEnd = Math.ceil(pos.x + size.x);
+  var yStart = Math.floor(pos.y);
+  var yEnd = Math.ceil(pos.y + size.y);
+
+  if(xStart<0 || xEnd>this.width || yStart<0){
+    return "wall"
+  }
+
+  for(var y=yStart; y<yEnd; y++){
+    for(var x=xStart; x<xEnd; x++){
+      var fieldType = this.grid[y][x];
+      if(fieldType){
+        return fieldType;
+      }
+    }
+  }
+};
+
 //actorChars
 var actorChars = {
   "Y": Player
@@ -114,6 +134,26 @@ function Player(pos){
 
 Player.prototype.act = function(step, level, keys){
   this.moveX(step, level, keys);
+  this.moveY(step, level, keys);
+};
+
+var jumpSpeed = 17/10;
+var gravity = 30/10;
+
+Player.prototype.moveY = function(step, level, keys){
+  this.speed.y += gravity * step;
+  var newDist = new Vector(0, this.speed.y * step);
+  var newPos = this.pos.plus(newDist);
+  var obstacle = level.obstacleAt(newPos, this.size);   //todo: obstacleAt
+  if(obstacle){
+    if(keys.up && this.speed.y > 0){
+      this.speed.y = -jumpSpeed;
+    }else{
+      this.speed.y = 0;
+    }
+  }else{
+    this.pos = newPos;
+  }
 };
 
 var playerXSpeed = 7;
