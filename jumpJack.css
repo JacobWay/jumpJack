@@ -15,3 +15,11 @@
 .wall{
   background: grey;
 }
+
+.actor{
+  position: absolute;
+}
+
+.player{
+  background: yellow;
+}

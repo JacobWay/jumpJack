@@ -32,6 +32,28 @@ Vector.prototype.equal = function(other){
   return false;
 };
 
+//key press event handler
+var arrowCodes = {
+  37: "left",
+  38: "up",
+  39: "right"
+};
+
+function trackKeys(codes){
+  var pressed = Object.create(null);
+  function handler(event){
+    if(codes.hasOwnProperty(event.keyCode)){
+      var down = event.type == "keydown";
+      pressed[codes[event.keyCode]] = down;
+      event.preventDefault();
+    }
+  }
+
+  addEventListener("keydown", handler);
+  addEventListener("keyup", handler);
+  return pressed;
+}
+
 //design level
 var levelPlan = [
 "                      ",
@@ -72,6 +94,11 @@ function Level(plan){
   }
 }
 
+Level.prototype.animate = function(step, keys){
+  this.actors.forEach(function(actor){
+    actor.act(step, this, keys);
+  }, this);
+};
 
 //actorChars
 var actorChars = {
@@ -84,6 +111,25 @@ function Player(pos){
   this.size = new Vector(1, 1);
   this.type = "player";
 }
+
+Player.prototype.act = function(step, level, keys){
+  this.moveX(step, level, keys);
+};
+
+var playerXSpeed = 7;
+
+Player.prototype.moveX = function(step, level, keys){
+  this.speed.x = 0;
+  if(keys.right){
+    this.speed.x += playerXSpeed;
+  }
+  if(keys.left){
+    this.speed.x -= playerXSpeed;
+  }
+  var newDist = new Vector(this.speed.x * step, 0);
+  var newPos = this.pos.plus(newDist);
+  this.pos = newPos;
+};
 
 
 //drawing
@@ -104,8 +150,11 @@ function DOMDisplay(parent, level){
   this.level = level;
 
   this.wrap.appendChild(this.drawBackground());
+  this.actorLayer = null;
+  this.drawFrame();
 }
 
+//draw background
 DOMDisplay.prototype.drawBackground = function(){
   var table = elt("table", "background");
   table.style.width = this.level.width * scale + "px";
@@ -116,13 +165,84 @@ DOMDisplay.prototype.drawBackground = function(){
       row.appendChild(elt("td", type));
     });
   });
+  /*
   if(table){
     console.log("drawBackground test: background table built");
   }else{
     console.log("drawBackground test: wrong!");
   }
+  */
   return table;
 };
+
+//draw actors
+DOMDisplay.prototype.drawActors = function(){
+  var actorWrap = elt("div");
+  this.level.actors.forEach(function(actor){
+    var actorEle = actorWrap.appendChild(elt("div", "actor " + actor.type));
+    actorEle.style.width = actor.size.x * scale + "px";
+    actorEle.style.height = actor.size.y * scale + "px";
+    actorEle.style.top = actor.pos.y * scale + "px";
+    actorEle.style.left = actor.pos.x * scale + "px";
+  });
+  /*
+  if(actorWrap){
+    console.log("drawActors test: draw actors built");
+  }else{
+    console.log("drawActors test: wrong!");
+  }
+  */
+  return actorWrap;
+};
+
+DOMDisplay.prototype.drawFrame = function(){
+  if(this.actorLayer){
+    this.wrap.removeChild(this.actorLayer);
+  }  
+  this.actorLayer = this.wrap.appendChild(this.drawActors());
+
+
+};
+
+var arrows = trackKeys(arrowCodes);
+if(arrows){
+  console.log("trackKeys test: key events registered");
+}
+
+function runAnimation(frameFunc){
+  var lastTime = null;
+  function frame(time){
+    if(lastTime != null){
+      var step = Math.min(time - lastTime, 100) / 1000;
+      frameFunc(step);
+      //console.log("runAnimation step: ", step);
+
+    }
+    lastTime = time;
+    if(1){
+      requestAnimationFrame(frame);
+    }
+  }
+  requestAnimationFrame(frame);
+  console.log("Game in runAnimation");
+}
+
+function runLevel(level, Display){
+  var display = new Display(document.body, level);
+  runAnimation(function(step){
+    level.animate(step, arrows);
+    display.drawFrame();
+  });
+  console.log("Game in runLevel");
+}
+
+
+function runGame(plan, Display){
+  runLevel(new Level(plan), Display);
+  console.log("Game is running");
+}
+
+runGame(levelPlan, DOMDisplay);
 
 function test(){
   //Level test
@@ -177,4 +297,4 @@ function test(){
   display.drawBackground();
   */
 }
-test();
+//test();
