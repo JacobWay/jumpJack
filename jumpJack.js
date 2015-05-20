@@ -57,14 +57,17 @@ function trackKeys(codes){
 //design level
 var levelPlan = [
 "                      ",
-"                      ",
-" x                    ",
-" x                    ",
-" x                    ",
-" x                    ",
-" x                    ",
-" x Y                  ",
-" xxxxxxxxxxxxxxxxx    ",
+"             o        ",
+"            o o       ",
+"           o   o      ",
+" Y        o     o     ",
+" x                  x ",
+" x      o         o x ",
+" x       o       o  x ",
+" x   x    o     o   x ",
+" x         o   o    x ",
+" x          o o     x ",
+" x!!!!!!!!!!!!!!!!!!x ",
 "                      ",
 ];
 
@@ -74,6 +77,7 @@ function Level(plan){
   this.width = plan[0].length;
   this.grid = [];
   this.actors = [];
+  this.status = null;
 
   for(var y=0; y<this.height; y++){
     var line = plan[y], gridLine = [];
@@ -85,6 +89,12 @@ function Level(plan){
         this.actors.push(new Actor(new Vector(x, y), ch));  
       }else{
         if(ch == "x"){
+          fieldType = "wall";
+        }
+        if(ch == "!"){
+          fieldType = "lava";
+        }
+        if(ch == "o"){
           fieldType = "wall";
         }
       }
@@ -107,7 +117,10 @@ Level.prototype.obstacleAt = function(pos, size){
   var yEnd = Math.ceil(pos.y + size.y);
 
   if(xStart<0 || xEnd>this.width || yStart<0){
-    return "wall"
+    return "wall";
+  }
+  if(yEnd > this.height){
+    return "lava";
   }
 
   for(var y=yStart; y<yEnd; y++){
@@ -120,6 +133,18 @@ Level.prototype.obstacleAt = function(pos, size){
   }
 };
 
+Level.prototype.playerTouched = function(type){
+  if(type == "lava" && this.status == null){
+    this.status = "lost";
+  }else{
+    //this.status = null;
+  }
+};
+
+Level.prototype.isFinished = function(){
+  return this.status != null;
+};
+
 //actorChars
 var actorChars = {
   "Y": Player
@@ -128,24 +153,30 @@ var actorChars = {
 function Player(pos){
   this.pos = pos;
   this.speed = new Vector(0, 0);
-  this.size = new Vector(1, 1);
+  this.size = new Vector(0.99, 0.99);
   this.type = "player";
 }
 
 Player.prototype.act = function(step, level, keys){
   this.moveX(step, level, keys);
   this.moveY(step, level, keys);
+
+  if(this.status == "lost"){
+    this.pos.y += step;
+    this.size.y -= step;
+  }
 };
 
-var jumpSpeed = 17/10;
-var gravity = 30/10;
+var jumpSpeed = 17;
+var gravity = 30;
 
 Player.prototype.moveY = function(step, level, keys){
   this.speed.y += gravity * step;
   var newDist = new Vector(0, this.speed.y * step);
   var newPos = this.pos.plus(newDist);
-  var obstacle = level.obstacleAt(newPos, this.size);   //todo: obstacleAt
+  var obstacle = level.obstacleAt(newPos, this.size);   
   if(obstacle){
+    level.playerTouched(obstacle);  
     if(keys.up && this.speed.y > 0){
       this.speed.y = -jumpSpeed;
     }else{
@@ -168,7 +199,12 @@ Player.prototype.moveX = function(step, level, keys){
   }
   var newDist = new Vector(this.speed.x * step, 0);
   var newPos = this.pos.plus(newDist);
-  this.pos = newPos;
+  var obstacle = level.obstacleAt(newPos, this.size);
+  if(obstacle){
+    level.playerTouched(obstacle);
+  }else{
+    this.pos = newPos;
+  }
 };
 
 
@@ -240,8 +276,10 @@ DOMDisplay.prototype.drawFrame = function(){
     this.wrap.removeChild(this.actorLayer);
   }  
   this.actorLayer = this.wrap.appendChild(this.drawActors());
+};
 
-
+DOMDisplay.prototype.clear = function(){
+  this.wrap.parentNode.removeChild(this.wrap);
 };
 
 var arrows = trackKeys(arrowCodes);
@@ -252,14 +290,15 @@ if(arrows){
 function runAnimation(frameFunc){
   var lastTime = null;
   function frame(time){
+    var stop = false;
     if(lastTime != null){
       var step = Math.min(time - lastTime, 100) / 1000;
-      frameFunc(step);
+      stop = frameFunc(step) === false;
       //console.log("runAnimation step: ", step);
 
     }
     lastTime = time;
-    if(1){
+    if(!stop){
       requestAnimationFrame(frame);
     }
   }
@@ -267,19 +306,36 @@ function runAnimation(frameFunc){
   console.log("Game in runAnimation");
 }
 
-function runLevel(level, Display){
+function runLevel(level, Display, andThen){
   var display = new Display(document.body, level);
   runAnimation(function(step){
     level.animate(step, arrows);
     display.drawFrame();
+
+    if(level.isFinished()){
+      display.clear();
+      if(andThen){
+        andThen(level.status);
+        console.log("andThen is running");
+      }
+      console.log("Any chance to return false in runAnimation?");
+      return false;
+    }
   });
   console.log("Game in runLevel");
 }
 
 
 function runGame(plan, Display){
-  runLevel(new Level(plan), Display);
-  console.log("Game is running");
+  function start(){
+    runLevel(new Level(plan), Display, function(status){
+      if(status == "lost"){
+        start();
+      }
+    });
+    console.log("Game is running");
+  }
+  start();
 }
 
 runGame(levelPlan, DOMDisplay);

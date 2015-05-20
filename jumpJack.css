@@ -16,10 +16,20 @@
   background: grey;
 }
 
+.lava{
+  background: crimson;
+  border-radius: 10px;
+}
+
+.rubber{
+  background: white;
+}
+
 .actor{
   position: absolute;
 }
 
 .player{
   background: yellow;
+  border-radius: 10px;
 }
