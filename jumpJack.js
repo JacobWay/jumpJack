@@ -77,7 +77,7 @@ function Level(plan){
   this.width = plan[0].length;
   this.grid = [];
   this.actors = [];
-  this.status = null;
+  this.status = this.finishDelay = null;
 
   for(var y=0; y<this.height; y++){
     var line = plan[y], gridLine = [];
@@ -104,10 +104,20 @@ function Level(plan){
   }
 }
 
+var maxStep = 0.05;
+
 Level.prototype.animate = function(step, keys){
-  this.actors.forEach(function(actor){
-    actor.act(step, this, keys);
-  }, this);
+  if(this.status != null){
+    this.finishDelay -= step;
+  }
+
+  while(step>0){
+    var thisStep = Math.min(step, maxStep);
+    this.actors.forEach(function(actor){
+      actor.act(step, this, keys);
+    }, this);
+    step -= thisStep;
+  }
 };
 
 Level.prototype.obstacleAt = function(pos, size){
@@ -136,13 +146,11 @@ Level.prototype.obstacleAt = function(pos, size){
 Level.prototype.playerTouched = function(type){
   if(type == "lava" && this.status == null){
     this.status = "lost";
-  }else{
-    //this.status = null;
-  }
-};
+    this.finishDelay = 1;
+  }};
 
 Level.prototype.isFinished = function(){
-  return this.status != null;
+  return this.status != null && this.finishDelay < 0;
 };
 
 //actorChars
@@ -161,7 +169,7 @@ Player.prototype.act = function(step, level, keys){
   this.moveX(step, level, keys);
   this.moveY(step, level, keys);
 
-  if(this.status == "lost"){
+  if(level.status == "lost"){
     this.pos.y += step;
     this.size.y -= step;
   }
@@ -253,7 +261,7 @@ DOMDisplay.prototype.drawBackground = function(){
 
 //draw actors
 DOMDisplay.prototype.drawActors = function(){
-  var actorWrap = elt("div");
+  var actorWrap = elt("div", "actorLayer");
   this.level.actors.forEach(function(actor){
     var actorEle = actorWrap.appendChild(elt("div", "actor " + actor.type));
     actorEle.style.width = actor.size.x * scale + "px";
@@ -276,6 +284,7 @@ DOMDisplay.prototype.drawFrame = function(){
     this.wrap.removeChild(this.actorLayer);
   }  
   this.actorLayer = this.wrap.appendChild(this.drawActors());
+  this.wrap.className = "game " + (this.level.status || "");
 };
 
 DOMDisplay.prototype.clear = function(){
