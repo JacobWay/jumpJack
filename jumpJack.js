@@ -66,6 +66,26 @@ Vector.prototype.equal = function(other){
   return false;
 };
 
+var sounds = ["jump", "won", "lost"];
+
+function loadSounds(sounds){
+  var results = Object.create(null);
+  var name;
+
+  function handler(event){
+    results[name].canPlay = true;
+  }
+  for(var i=0; i<sounds.length; i++){
+    name = sounds[i];
+    results[name] = document.createElement("audio");
+    results[name].addEventListener("canplay", handler);
+    results[name].src = name + ".mp3";
+  }
+  return results;
+}
+
+var soundsObj = loadSounds(sounds);
+
 //key press event handler
 var arrowCodes = {
   37: "left",
@@ -86,6 +106,7 @@ function trackKeys(codes){
       pressed[codes[event.keyCode]] = down;
       event.preventDefault();
       console.log("trackKeys handler is running");
+      soundsObj.jump.play();
     }
     if(codes.hasOwnProperty("touched") &&
         (event.type == "touchstart" || event.type == "touchend")){
@@ -217,6 +238,7 @@ Level.prototype.playerTouched = function(type, actor){
   if(type == "lava" && this.status == null){
     this.status = "lost";
     this.finishDelay = 1;
+    soundsObj.lost.play();
   }else if(type == "medal"){
     this.actors = this.actors.filter(function(other){
       return other != actor;
@@ -229,6 +251,7 @@ Level.prototype.playerTouched = function(type, actor){
       this.status = "won";
       this.finishDelay = 1;
       console.log("playerTouched test: this.status won");
+      soundsObj.won.play();
     }
   }
 };
@@ -487,6 +510,12 @@ function runLevel(level, Display, andThen){
   console.log("Game in runLevel");
 }
 
+function playBackgroundSong(){
+  var dreamAudio = new Audio("cityinsky.mp3");
+  if(dreamAudio){
+    dreamAudio.play();
+  }
+}
 
 function runGame(plan, Display){
   function start(){
@@ -502,6 +531,7 @@ function runGame(plan, Display){
     console.log("Game is running");
   }
   start();
+  playBackgroundSong();
 }
 
 runGame(levelPlan, DOMDisplay);
