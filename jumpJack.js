@@ -10,6 +10,8 @@
 //action
 //run
 
+//caculate the map size
+
 //x, y coordinate Function
 function Vector(x, y){
   this.x = x;
@@ -36,23 +38,59 @@ Vector.prototype.equal = function(other){
 var arrowCodes = {
   37: "left",
   38: "up",
-  39: "right"
+  39: "right",
+  "touched": null
+
 };
+
+var touchLocation = [];
 
 function trackKeys(codes){
   var pressed = Object.create(null);
   function handler(event){
-    if(codes.hasOwnProperty(event.keyCode)){
-      var down = event.type == "keydown";
+    if(codes.hasOwnProperty(event.keyCode) &&
+        (event.type == "keydown" || event.type == "keyup")){
+      var down = (event.type == "keydown");
       pressed[codes[event.keyCode]] = down;
       event.preventDefault();
+      console.log("trackKeys handler is running");
+    }
+    if(codes.hasOwnProperty("touched") &&
+        (event.type == "touchstart" || event.type == "touchend")){
+      var isTouched = event.type == "touchstart";
+      pressed["touched"] = isTouched;
+      event.preventDefault();
+
+      var touchList = event.changedTouches;
+      var touch;
+      for(var i = 0; i < touchList.length; i++){
+        touch = {x: touchList[i].pageX, y: touchList[i].pageY, id: touchList[i].identifier};
+      }
+      touchLocation = [touch.x, touch.y];
+      console.log("trackTouch handler is running: ", touchLocation);
     }
   }
 
   addEventListener("keydown", handler);
   addEventListener("keyup", handler);
+  addEventListener("touchstart", handler);
+  addEventListener("touchend", handler);
   return pressed;
 }
+/*
+function trackTouch(){
+  var touched = Object.create(null);
+  function handler(event){
+    var isTouched = event.type == "touchstart";
+    touched["touched"] = isTouched;
+    event.preventDefault();
+    console.log("trackTouch handler is running");
+  }
+
+  addEventListener("touchstart", handler);
+  addEventListener("touchend", handler);
+  return touched;
+}*/
 
 //design level
 var levelPlan = [
@@ -60,8 +98,8 @@ var levelPlan = [
 "             o        ",
 "            o o       ",
 "           o   o      ",
-" Y        o     o     ",
-" x                  x ",
+" Y        o     o  M  ",
+" x       M          x ",
 " x      o         o x ",
 " x       o       o  x ",
 " x   x    o     o   x ",
@@ -102,6 +140,10 @@ function Level(plan){
     }
     this.grid.push(gridLine);
   }
+
+  this.player = this.actors.filter(function(actor){
+    return actor.type == "player";
+  })[0];
 }
 
 var maxStep = 0.05;
@@ -143,11 +185,38 @@ Level.prototype.obstacleAt = function(pos, size){
   }
 };
 
-Level.prototype.playerTouched = function(type){
+Level.prototype.actorAt = function(actor){
+  for(var i=0; i<this.actors.length; i++){
+    var other = this.actors[i];
+    if(actor != other &&
+        actor.pos.x < other.pos.x + other.size.x &&
+        actor.pos.x + actor.size.x > other.pos.x &&
+        actor.pos.y < other.pos.y + other.size.y &&
+        actor.pos.y + actor.size.y > other.pos.y){
+      return other;
+    }
+  }
+};
+
+Level.prototype.playerTouched = function(type, actor){
   if(type == "lava" && this.status == null){
     this.status = "lost";
     this.finishDelay = 1;
-  }};
+  }else if(type == "medal"){
+    this.actors = this.actors.filter(function(other){
+      return other != actor;
+    });
+
+    var some = this.actors.some(function(item){
+      return item.type == "medal";
+    });
+    if(!some){
+      this.status = "won";
+      this.finishDelay = 1;
+      console.log("playerTouched test: this.status won");
+    }
+  }
+};
 
 Level.prototype.isFinished = function(){
   return this.status != null && this.finishDelay < 0;
@@ -155,19 +224,37 @@ Level.prototype.isFinished = function(){
 
 //actorChars
 var actorChars = {
-  "Y": Player
+  "Y": Player,
+  "M": Medal
 };
+
+function Medal(pos){
+  this.pos = pos;
+  this.size = new Vector(1, 1);
+}
+
+Medal.prototype.act = function(){
+};
+
+Medal.prototype.type = "medal";
 
 function Player(pos){
   this.pos = pos;
   this.speed = new Vector(0, 0);
   this.size = new Vector(0.99, 0.99);
-  this.type = "player";
 }
+
+Player.prototype.type = "player";
 
 Player.prototype.act = function(step, level, keys){
   this.moveX(step, level, keys);
   this.moveY(step, level, keys);
+  this.touchedXY(step, level, keys);
+
+  var otherActor = level.actorAt(this);
+  if(otherActor){
+    level.playerTouched(otherActor.type, otherActor);
+  }
 
   if(level.status == "lost"){
     this.pos.y += step;
@@ -185,7 +272,7 @@ Player.prototype.moveY = function(step, level, keys){
   var obstacle = level.obstacleAt(newPos, this.size);   
   if(obstacle){
     level.playerTouched(obstacle);  
-    if(keys.up && this.speed.y > 0){
+    if((keys.up || keys.touched) && this.speed.y > 0){
       this.speed.y = -jumpSpeed;
     }else{
       this.speed.y = 0;
@@ -199,7 +286,7 @@ var playerXSpeed = 7;
 
 Player.prototype.moveX = function(step, level, keys){
   this.speed.x = 0;
-  if(keys.right){
+  if(keys.right || keys.touched){
     this.speed.x += playerXSpeed;
   }
   if(keys.left){
@@ -215,6 +302,55 @@ Player.prototype.moveX = function(step, level, keys){
   }
 };
 
+Player.prototype.touchX = function(step, level, keys){
+  this.speed.x = 0;
+
+  var isRight = touchLocation[0] > this.pos.x * scale;
+  var isLeft = touchLocation[0] < this.pos.x * scale;
+  console.log("player.pos.x: ", this.pos.x * scale);
+  console.log("touchLocation: isRight: ", touchLocation, isRight);
+  if(keys.touched && isRight){
+    this.speed.x += playerXSpeed;
+  }
+  if(keys.touched && (isLeft)){
+    this.speed.x -= playerXSpeed;
+    console.log("isLeft & this.speed.x & this.pos.x: ", isLeft, this.speed.x, this.pos.x);
+  }
+  var newDist = new Vector(this.speed.x * step, 0);
+  var newPos = this.pos.plus(newDist);
+  var obstacle = level.obstacleAt(newPos, this.size);
+  if(obstacle){
+    level.playerTouched(obstacle);
+  }else{
+    this.pos = newPos;
+    console.log("newPos.x: ", this.pos.x);
+  }
+};
+
+Player.prototype.touchY = function(step, level, keys){
+  this.speed.y += gravity * step;
+  var newDist = new Vector(0, this.speed.y * step);
+  var newPos = this.pos.plus(newDist);
+  var obstacle = level.obstacleAt(newPos, this.size);   
+  if(obstacle){
+    level.playerTouched(obstacle);  
+    if((keys.up || keys.touched) && this.speed.y > 0){
+      this.speed.y = -jumpSpeed;
+    }else{
+      this.speed.y = 0;
+    }
+  }else{
+    this.pos = newPos;
+  }
+};
+
+Player.prototype.touchedXY = function(step, level, keys){
+  if(keys.touched == true){
+    console.log("touchedXY is running");
+    this.touchX(step, level, keys);
+    this.touchY(step, level, keys);
+  }
+};
 
 //drawing
 //create dom element
@@ -268,14 +404,16 @@ DOMDisplay.prototype.drawActors = function(){
     actorEle.style.height = actor.size.y * scale + "px";
     actorEle.style.top = actor.pos.y * scale + "px";
     actorEle.style.left = actor.pos.x * scale + "px";
+
+    /*
+    //register player input event
+    if(actor.type == "player"){
+      actorEle.addEventListener("touchstart", function(event){
+        arrows["touched"] = true;
+      });
+    }
+    */
   });
-  /*
-  if(actorWrap){
-    console.log("drawActors test: draw actors built");
-  }else{
-    console.log("drawActors test: wrong!");
-  }
-  */
   return actorWrap;
 };
 
@@ -341,6 +479,10 @@ function runGame(plan, Display){
       if(status == "lost"){
         start();
       }
+      if(status == "won"){
+        //won logic
+        start();
+      }
     });
     console.log("Game is running");
   }
@@ -348,6 +490,7 @@ function runGame(plan, Display){
 }
 
 runGame(levelPlan, DOMDisplay);
+
 
 function test(){
   //Level test
