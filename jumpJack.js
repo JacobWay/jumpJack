@@ -9,8 +9,40 @@
 //move
 //action
 //run
+  //animation
+  //draw frame
+
+(function(){
+//design level
+var levelPlan = [
+"                      ",
+"             o        ",
+"            o o       ",
+"           o   o      ",
+" Y        o     o  M  ",
+" x       M          x ",
+" x      o         o x ",
+" x       o       o  x ",
+" x   x    o     o   x ",
+" x         o   o    x ",
+" x          o o     x ",
+" x!!!!!!!!!!!!!!!!!!x ",
+"                      ",
+];
 
 //caculate the map size
+var aRatio = levelPlan[0].length / levelPlan.length;
+var cWidth = document.documentElement.clientWidth; 
+var cHeight = document.documentElement.clientHeight;
+var cRatio = cWidth / cHeight;
+var scale = null;   // scale the dom element
+
+if(aRatio > cRatio){
+  scale = cWidth / levelPlan[0].length;
+}else{
+  scale = cHeight / levelPlan.length;
+}
+console.log("scale: ", scale);
 
 //x, y coordinate Function
 function Vector(x, y){
@@ -91,23 +123,6 @@ function trackTouch(){
   addEventListener("touchend", handler);
   return touched;
 }*/
-
-//design level
-var levelPlan = [
-"                      ",
-"             o        ",
-"            o o       ",
-"           o   o      ",
-" Y        o     o  M  ",
-" x       M          x ",
-" x      o         o x ",
-" x       o       o  x ",
-" x   x    o     o   x ",
-" x         o   o    x ",
-" x          o o     x ",
-" x!!!!!!!!!!!!!!!!!!x ",
-"                      ",
-];
 
 //level constructor
 function Level(plan){
@@ -362,7 +377,7 @@ function elt(name, className){
   return elt;
 }
 
-var scale = 20; //scale the dom element
+// var scale = 20; //scale the dom element
 
 //DOMDisplay constructor
 function DOMDisplay(parent, level){
@@ -546,3 +561,5 @@ function test(){
   */
 }
 //test();
+
+})();

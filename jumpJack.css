@@ -18,7 +18,7 @@
 
 .lava{
   background: crimson;
-  border-radius: 10px;
+  border-radius: 100px;
 }
 
 .rubber{
@@ -31,7 +31,7 @@
 
 .player{
   background: yellow;
-  border-radius: 10px;
+  border-radius: 500px;
 }
 
 .medal{
