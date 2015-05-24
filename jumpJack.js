@@ -600,7 +600,8 @@ function runGame(plan, Display){
 }
 
 function createTextLayer(){
-  var content= "<p>技术灵感：Marijn Haverbeke</p>" +
+  var content= "<p>上左右方向键，触摸屏，点触屏幕即可：）</p>" +
+    "<p>技术灵感：Marijn Haverbeke</p>" +
     "<p>创意灵感：危国华（爸爸）</p>" +
     "<p>技术实现：危强（儿子）</p>";
   var textLayer = elt("div", "textLayer");
