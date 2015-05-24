@@ -12,6 +12,9 @@
   //animation
   //draw frame
 
+var Howl = require("../../../js/howler.js").Howl;
+
+
 (function() {
     var throttle = function(type, name, obj) {
         var obj = obj || window;
@@ -116,10 +119,6 @@ Vector.prototype.equal = function(other){
   return false;
 };
 
-function hasAudio(){
-  var audio = document.createElement("audio");
-  return audio && audio.canPlayType;
-}
 
 var sounds = ["background", "jump", "won", "lost"];
 
@@ -127,24 +126,23 @@ function loadSounds(sounds){
   var results = Object.create(null);
   var name;
 
-  function handler(event){
-    results[name].canPlay = true;
-  }
   for(var i=0; i<sounds.length; i++){
     name = sounds[i];
-    results[name] = document.createElement("audio");
-    results[name].addEventListener("canplay", handler);
-    results[name].src = name + ".mp3";
-    if(name == "background"){
-      results[name].loop = true;
-    }
+    var sound = new Howl({
+      urls: [name + ".mp3"],
+      autoplay: (name === "background" ? true : false),
+      loop: (name === "background" ? true : false),
+      volume: 0.8,
+      onend: function(){
+        console.log("music load: ", name);
+      }
+    });
+    results[name] = sound;
   }
   return results;
 }
 
-if(hasAudio){
-  var soundsObj = loadSounds(sounds);
-}
+var soundsObj = loadSounds(sounds);
 
 //key press event handler
 var arrowCodes = {
@@ -295,7 +293,7 @@ Level.prototype.actorAt = function(actor){
 Level.prototype.playerTouched = function(type, actor){
   if(type == "lava" && this.status == null){
     this.status = "lost";
-    this.finishDelay = 1;
+    this.finishDelay = 2;
     soundsObj.lost.play();
   }else if(type == "medal"){
     this.actors = this.actors.filter(function(other){
@@ -307,7 +305,7 @@ Level.prototype.playerTouched = function(type, actor){
     });
     if(!some){
       this.status = "won";
-      this.finishDelay = 1;
+      this.finishDelay = 2;
       soundsObj.won.play();
     }
   }
