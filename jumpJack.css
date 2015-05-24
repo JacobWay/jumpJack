@@ -1,5 +1,8 @@
 .game{
   position: relative;
+  text-align: center;
+  line-height: 2em;
+  font-size: 1.5em;
 }
 
 .background{
@@ -44,4 +47,12 @@
 
 .won .player{
   box-shadow: -4px -7px 8px white, 4px -7px 8px white;
+}
+
+.textLayer{
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  color: black;
+  z-index: 10000;
 }
