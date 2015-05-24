@@ -34,7 +34,7 @@
 
 (function(){
 //design level
-var levelPlan = [
+/*var levelPlan = [
 "                      ",
 "             o        ",
 "            o o       ",
@@ -46,6 +46,22 @@ var levelPlan = [
 " x   x    o     o   x ",
 " x         o   o    x ",
 " x          o o     x ",
+" x!!!!!!!!!!!!!!!!!!x ",
+"                      ",
+];
+*/
+var levelPlan = [
+"             o        ",
+"             o      M ",
+"                    xx",
+"             o      x ",
+" Y           o    x x ",
+" x           o      x ",
+" x        x  o  x   x ",
+" x      x    o      x ",
+" x x x       ox     x ",
+" x           o      x ",
+" x          xo      x ",
 " x!!!!!!!!!!!!!!!!!!x ",
 "                      ",
 ];
@@ -308,11 +324,16 @@ var actorChars = {
 };
 
 function Medal(pos){
-  this.pos = pos;
-  this.size = new Vector(1, 1);
+  this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
+  this.size = new Vector(0.6, 0.6);
+  this.wobble = Math.random() * Math.PI * 2;
 }
 
-Medal.prototype.act = function(){
+var wobbleSpeed = 8, wobbleDist = 0.07;
+Medal.prototype.act = function(step){
+  this.wobble += wobbleSpeed * step;
+  this.wobblePos = Math.sin(this.wobble) * wobbleDist;
+  this.pos = this.basePos.plus(new Vector(0, this.wobblePos));
 };
 
 Medal.prototype.type = "medal";
@@ -320,7 +341,7 @@ Medal.prototype.type = "medal";
 function Player(pos){
   this.pos = pos;
   this.speed = new Vector(0, 0);
-  this.size = new Vector(0.99, 0.99);
+  this.size = new Vector(0.85, 0.85);
 }
 
 Player.prototype.type = "player";
@@ -478,9 +499,12 @@ DOMDisplay.prototype.drawBackground = function(){
   return table;
 };
 
-function playerText(actor, actorEle){
+function actorText(actor, actorEle){
   if(actor.type == "player"){
     actorEle.textContent = "强";
+  }
+  if(actor.type == "medal"){
+    actorEle.textContent = "❤️";
   }
 }
 //draw actors
@@ -493,7 +517,7 @@ DOMDisplay.prototype.drawActors = function(){
     actorEle.style.top = actor.pos.y * scale + "px";
     actorEle.style.left = actor.pos.x * scale + "px";
 
-    playerText(actor, actorEle);
+    actorText(actor, actorEle);
   });
   return actorWrap;
 };
