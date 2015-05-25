@@ -1542,21 +1542,9 @@ function trackKeys(codes){
   addEventListener("touchend", handler);
   return pressed;
 }
-/*
-function trackTouch(){
-  var touched = Object.create(null);
-  function handler(event){
-    var isTouched = event.type == "touchstart";
-    touched["touched"] = isTouched;
-    event.preventDefault();
-    console.log("trackTouch handler is running");
-  }
 
-  addEventListener("touchstart", handler);
-  addEventListener("touchend", handler);
-  return touched;
-}*/
 
+//Map object, Actor object, drawing API
 //level constructor
 function Level(plan){
   this.height = plan.length;
@@ -1565,11 +1553,12 @@ function Level(plan){
   this.actors = [];
   this.status = this.finishDelay = null;
 
+  // set grid and actors
   for(var y=0; y<this.height; y++){
     var line = plan[y], gridLine = [];
     for(var x=0; x<this.width; x++){
       var ch = line[x];
-      fieldType = null;
+      var fieldType = null;
       var Actor = actorChars[ch];
       if(Actor){
         this.actors.push(new Actor(new Vector(x, y), ch));  
@@ -1589,6 +1578,7 @@ function Level(plan){
     this.grid.push(gridLine);
   }
 
+  // filter the player
   this.player = this.actors.filter(function(actor){
     return actor.type == "player";
   })[0];
@@ -1686,8 +1676,8 @@ function Medal(pos){
 var wobbleSpeed = 8, wobbleDist = 0.07;
 Medal.prototype.act = function(step){
   this.wobble += wobbleSpeed * step;
-  this.wobblePos = Math.sin(this.wobble) * wobbleDist;
-  this.pos = this.basePos.plus(new Vector(0, this.wobblePos));
+  var wobblePos = Math.sin(this.wobble) * wobbleDist;
+  this.pos = this.basePos.plus(new Vector(0, wobblePos));
 };
 
 Medal.prototype.type = "medal";
@@ -1806,7 +1796,10 @@ Player.prototype.touchedXY = function(step, level, keys){
   }
 };
 
+
 //drawing
+//helper functions
+
 //create dom element
 function elt(name, className){
   var elt = document.createElement(name);
@@ -1816,18 +1809,7 @@ function elt(name, className){
   return elt;
 }
 
-// var scale = 20; //scale the dom element
-
-//DOMDisplay constructor
-function DOMDisplay(parent, level){
-  this.wrap = parent.appendChild(elt("div", "game"));   //todo: elt
-  this.level = level;
-
-  this.wrap.appendChild(this.drawBackground());
-  this.actorLayer = null;
-  this.drawFrame();
-}
-
+// fill lava text
 function lavaText(type, tdElt){
   if(type == "lava" && sloganCount < slogan.length){
     tdElt.textContent = slogan[sloganCount];
@@ -1835,24 +1817,7 @@ function lavaText(type, tdElt){
   }
 }
 
-//draw background
-DOMDisplay.prototype.drawBackground = function(){
-  initialVar();
-  var table = elt("table", "background");
-  table.style.width = this.level.width * scale + "px";
-  this.level.grid.forEach(function(gridLine){
-    var row = table.appendChild(elt("tr", "bgRow"));
-    row.style.height = scale + "px";
-    gridLine.forEach(function(type){
-      var tdElt = elt("td", type);
-      row.appendChild(tdElt);
-      if(type == "lava")
-        lavaText(type, tdElt);
-    });
-  });
-  return table;
-};
-
+// fill actor text
 function actorText(actor, actorEle){
   if(actor.type == "player"){
     actorEle.textContent = "强";
@@ -1861,6 +1826,38 @@ function actorText(actor, actorEle){
     actorEle.textContent = "❤️";
   }
 }
+
+//DOMDisplay constructor
+function DOMDisplay(parent, level){
+  this.wrap = parent.appendChild(elt("div", "game"));
+  this.level = level;
+
+  this.wrap.appendChild(this.drawBackground());
+  this.actorLayer = null;
+  this.drawFrame();
+}
+
+//draw background
+DOMDisplay.prototype.drawBackground = function(){
+  // for redraw background variables when resize screen
+  initialVar();
+
+  var table = elt("table", "background");
+  table.style.width = this.level.width * scale + "px";
+  this.level.grid.forEach(function(gridLine){
+    var row = table.appendChild(elt("tr", "bgRow"));
+    row.style.height = scale + "px";
+    gridLine.forEach(function(type){
+      var tdElt = elt("td", type);
+      row.appendChild(tdElt);
+      //fill lava text
+      if(type == "lava")
+        lavaText(type, tdElt);
+    });
+  });
+  return table;
+};
+
 //draw actors
 DOMDisplay.prototype.drawActors = function(){
   var actorWrap = elt("div", "actorLayer");
@@ -1870,7 +1867,7 @@ DOMDisplay.prototype.drawActors = function(){
     actorEle.style.height = actor.size.y * scale + "px";
     actorEle.style.top = actor.pos.y * scale + "px";
     actorEle.style.left = actor.pos.x * scale + "px";
-
+    // fill actor text
     actorText(actor, actorEle);
   });
   return actorWrap;
@@ -1888,10 +1885,22 @@ DOMDisplay.prototype.clear = function(){
   this.wrap.parentNode.removeChild(this.wrap);
 };
 
+
+// helper function
+
 var arrows = trackKeys(arrowCodes);
-if(arrows){
-  console.log("trackKeys test: key events registered");
+
+// create text layer, absolute position in top left
+function createTextLayer(){
+  var content= "<p>上左右方向键，触摸屏，点触屏幕即可:-)</p>" +
+    "<p>技术灵感：Marijn Haverbeke</p>" +
+    "<p>创意灵感：危国华（爸爸）</p>" +
+    "<p>技术实现：危强（儿子）</p>";
+  var textLayer = elt("div", "textLayer");
+  textLayer.innerHTML = content;
+  document.body.appendChild(textLayer);
 }
+
 
 function runAnimation(frameFunc){
   var lastTime = null;
@@ -1909,6 +1918,7 @@ function runAnimation(frameFunc){
   requestAnimationFrame(frame);
 }
 
+// draw level, actors, animation
 function runLevel(level, Display, andThen){
   var display = new Display(document.body, level);
   runAnimation(function(step){
@@ -1920,13 +1930,13 @@ function runLevel(level, Display, andThen){
       if(andThen){
         andThen(level.status);
       }
-      console.log("In runLevel, any chance to return false?");
       return false;
     }
 
   });
   
   // If resize event, redraw game background
+  // ? place in a initialized event function
   window.addEventListener('optimizedResize', function(){
     scaleMap();
     var backgroundElt = document.getElementsByClassName("background")[0];
@@ -1955,15 +1965,6 @@ function runGame(plan, Display){
   start();
 }
 
-function createTextLayer(){
-  var content= "<p>上左右方向键，触摸屏，点触屏幕即可：）</p>" +
-    "<p>技术灵感：Marijn Haverbeke</p>" +
-    "<p>创意灵感：危国华（爸爸）</p>" +
-    "<p>技术实现：危强（儿子）</p>";
-  var textLayer = elt("div", "textLayer");
-  textLayer.innerHTML = content;
-  document.body.appendChild(textLayer);
-}
 
 runGame(levelPlan, DOMDisplay);
 
