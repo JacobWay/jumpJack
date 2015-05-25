@@ -607,6 +607,7 @@ function runGame(plan, Display){
   scaleMap();
   createTextLayer();
   start();
+  console.log("grunt watch is running");
 }
 
 

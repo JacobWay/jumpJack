@@ -19,5 +19,12 @@
   "bugs": {
     "url": "https://github.com/JacobWay/jumpJack/issues"
   },
-  "homepage": "https://github.com/JacobWay/jumpJack"
+  "homepage": "https://github.com/JacobWay/jumpJack",
+  "dependencies": {
+    "browserify": "^10.2.1",
+    "grunt": "^0.4.5",
+    "grunt-browserify": "^3.8.0",
+    "grunt-cli": "^0.1.13",
+    "grunt-contrib-watch": "^0.6.1"
+  }
 }
