@@ -1,0 +1,23 @@
+{
+  "name": "jumpJack",
+  "version": "1.0.0",
+  "description": "pure JS jump and run game",
+  "main": "jumpJack.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JacobWay/jumpJack.git"
+  },
+  "keywords": [
+    "Javascript",
+    "game"
+  ],
+  "author": "JacobWay",
+  "license": "No",
+  "bugs": {
+    "url": "https://github.com/JacobWay/jumpJack/issues"
+  },
+  "homepage": "https://github.com/JacobWay/jumpJack"
+}
