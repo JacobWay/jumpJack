@@ -12,7 +12,7 @@
   //animation
   //draw frame
 
-var Howl = require("../../../js/howler.js").Howl;
+var Howl = require("howler").Howl;
 
 
 (function() {
@@ -170,6 +170,7 @@ function trackKeys(codes){
       var isTouched = event.type == "touchstart";
       pressed["touched"] = isTouched;
       event.preventDefault();
+      soundsObj.jump.play();
 
       var touchList = event.changedTouches;
       var touch;
@@ -360,7 +361,7 @@ Player.prototype.moveY = function(step, level, keys){
   var obstacle = level.obstacleAt(newPos, this.size);   
   if(obstacle){
     level.playerTouched(obstacle);  
-    if((keys.up || keys.touched) && this.speed.y > 0){
+    if((keys.up) && this.speed.y > 0){
       this.speed.y = -jumpSpeed;
     }else{
       this.speed.y = 0;
@@ -395,14 +396,11 @@ Player.prototype.touchX = function(step, level, keys){
 
   var isRight = touchLocation[0] > this.pos.x * scale;
   var isLeft = touchLocation[0] < this.pos.x * scale;
-  console.log("player.pos.x: ", this.pos.x * scale);
-  console.log("touchLocation: isRight: ", touchLocation, isRight);
   if(keys.touched && isRight){
     this.speed.x += playerXSpeed;
   }
   if(keys.touched && (isLeft)){
     this.speed.x -= playerXSpeed;
-    console.log("isLeft & this.speed.x & this.pos.x: ", isLeft, this.speed.x, this.pos.x);
   }
   var newDist = new Vector(this.speed.x * step, 0);
   var newPos = this.pos.plus(newDist);
@@ -411,7 +409,6 @@ Player.prototype.touchX = function(step, level, keys){
     level.playerTouched(obstacle);
   }else{
     this.pos = newPos;
-    console.log("newPos.x: ", this.pos.x);
   }
 };
 
@@ -422,7 +419,7 @@ Player.prototype.touchY = function(step, level, keys){
   var obstacle = level.obstacleAt(newPos, this.size);   
   if(obstacle){
     level.playerTouched(obstacle);  
-    if((keys.up || keys.touched) && this.speed.y > 0){
+    if((keys.touched) && this.speed.y > 0){
       this.speed.y = -jumpSpeed;
     }else{
       this.speed.y = 0;
@@ -434,7 +431,6 @@ Player.prototype.touchY = function(step, level, keys){
 
 Player.prototype.touchedXY = function(step, level, keys){
   if(keys.touched == true){
-    console.log("touchedXY is running");
     this.touchX(step, level, keys);
     this.touchY(step, level, keys);
   }
