@@ -12,9 +12,14 @@
   //animation
   //draw frame
 
+
+(function(){
+// Helper function
+
+// web audio api
 var Howl = require("howler").Howl;
 
-
+// optimize the window resize event
 (function() {
     var throttle = function(type, name, obj) {
         var obj = obj || window;
@@ -35,14 +40,13 @@ var Howl = require("howler").Howl;
 })();
 
 
-(function(){
 //design level
 /*var levelPlan = [
 "                      ",
 "             o        ",
 "            o o       ",
 "           o   o      ",
-" Y        o     o  M  ",
+" Y        o     o   M ",
 " x       M          x ",
 " x      o         o x ",
 " x       o       o  x ",
@@ -75,11 +79,13 @@ var scale = baseScale;   // scale the dom element
 
 var slogan = ["跳", "啊", "跳", ",", "小", "强", ",", "我", "想", "看", "看", "这", "个", "大", "大", "的", "世", "界"];
 var sloganCount = 0;
+// mainly for resize viewport, display slogan correctly
 function initialVar(){
   if(sloganCount && sloganCount != 0)
     sloganCount = 0;
 }
 
+// All screen size can be done right here
 function scaleMap(){
   //caculate the map size
   var aRatio = levelPlan[0].length / levelPlan.length;
@@ -132,10 +138,7 @@ function loadSounds(sounds){
       urls: [name + ".mp3"],
       autoplay: (name === "background" ? true : false),
       loop: (name === "background" ? true : false),
-      volume: 0.8,
-      onend: function(){
-        console.log("music load: ", name);
-      }
+      volume: 0.8
     });
     results[name] = sound;
   }
@@ -472,9 +475,17 @@ function DOMDisplay(parent, level){
   this.wrap = parent.appendChild(elt("div", "game"));
   this.level = level;
 
-  this.wrap.appendChild(this.drawBackground());
+  this.backgroundLayer = this.wrap.appendChild(this.drawBackground());
   this.actorLayer = null;
   this.drawFrame();
+}
+
+DOMDisplay.prototype.resize = function(){
+    scaleMap();
+    if(this.backgroundLayer)
+      this.backgroundLayer.parentNode.removeChild(this.backgroundLayer);
+    this.backgroundLayer = this.wrap.appendChild(this.drawBackground());
+    window.removeEventListener("optimizedResize", this.resize);
 }
 
 //draw background
@@ -575,15 +586,7 @@ function runLevel(level, Display, andThen){
 
   });
   
-  // If resize event, redraw game background
-  // ? place in a initialized event function
-  window.addEventListener('optimizedResize', function(){
-    scaleMap();
-    var backgroundElt = document.getElementsByClassName("background")[0];
-    if(backgroundElt)
-      backgroundElt.parentNode.removeChild(backgroundElt);
-    display.wrap.appendChild(display.drawBackground());
-  });
+  window.addEventListener('optimizedResize', display.resize.bind(display));
 }
 
 function runGame(plan, Display){
@@ -603,7 +606,6 @@ function runGame(plan, Display){
   scaleMap();
   createTextLayer();
   start();
-  console.log("grunt watch is running");
 }
 
 
